@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cloud</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light & Soft Color Palette */
+            --primary: #3b82f6;       /* Soft Sky Blue */
+            --primary-light: #eff6ff; /* Very Light Blue */
+            --bg-body: #f8fafc;       /* Light Gray Background */
+            --bg-card: #ffffff;       /* Pure White */
+            --text-main: #334155;     /* Slate Gray (Soft Black) */
+            --text-muted: #94a3b8;    /* Light Gray */
+            --border: #e2e8f0;        /* Subtle Border */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+            --sidebar-width: 280px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(#e0e7ff 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .hidden { display: none !important; }
+        
+        /* --- Components --- */
+        .btn {
+            padding: 0.6rem 1.2rem; border-radius: 10px; border: none; cursor: pointer;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px; color: white;
+        }
+        .btn-primary { 
+            background: var(--primary); 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); 
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3); }
+        
+        .btn-light {
+            background: white; color: var(--primary); border: 1px solid var(--border);
+        }
+        .btn-light:hover { background: var(--primary-light); }
+
+        .btn-icon {
+            background: transparent; color: var(--text-main); padding: 0.5rem;
+            font-size: 1.2rem; border: none; cursor: pointer;
+        }
+
+        input, select {
+            background: #f1f5f9; border: 1px solid transparent; color: var(--text-main);
+            padding: 0.7rem 1rem; border-radius: 10px; outline: none; transition: 0.2s;
+            font-size: 0.9rem; width: 100%;
+        }
+        input:focus, select:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        /* --- Auth Screen --- */
+        #auth-container {
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            padding: 1rem;
+        }
+        .auth-box {
+            background: var(--bg-card); padding: 3rem; border-radius: 24px;
+            width: 100%; max-width: 400px; text-align: center;
+            box-shadow: var(--shadow-lg); border: 1px solid white;
+        }
+        .auth-logo { margin-bottom: 2rem; }
+        .auth-logo i { font-size: 3rem; color: var(--primary); margin-bottom: 1rem; }
+        .auth-logo h1 { font-size: 1.8rem; color: var(--text-main); }
+        .auth-logo p { color: var(--text-muted); margin-top: 0.5rem; }
+
+        /* --- App Layout --- */
+        #app-container { display: flex; height: 100vh; position: relative; }
+
+        /* Sidebar */
+        aside {
+            width: var(--sidebar-width); background: var(--bg-card); 
+            display: flex; flex-direction: column; padding: 1.5rem;
+            border-right: 1px solid var(--border);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000; /* Above content for mobile */
+            height: 100%;
+        }
+        .brand { 
+            display: flex; align-items: center; gap: 12px; margin-bottom: 2.5rem; 
+            padding-left: 0.5rem;
+        }
+        .brand i { font-size: 1.5rem; color: var(--primary); }
+        .brand span { font-weight: 700; font-size: 1.2rem; color: var(--text-main); }
+
+        .nav-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 2rem; }
+        .nav-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.8rem 1rem; border-radius: 12px; color: var(--text-muted); cursor: pointer;
+            transition: all 0.2s; font-size: 0.95rem; font-weight: 600;
+        }
+        .nav-item:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-item.active { background: var(--primary-light); color: var(--primary); }
+        .nav-item i.icon-left { margin-right: 12px; width: 20px; text-align: center; }
+
+        .section-title {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; 
+            color: var(--text-muted); font-weight: 700; margin-bottom: 1rem; padding-left: 0.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-title i { cursor: pointer; font-size: 0.9rem; color: var(--primary); }
+
+        .folder-list { max-height: 300px; overflow-y: auto; padding-right: 5px; }
+        .folder-list::-webkit-scrollbar { width: 4px; }
+        .folder-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Main Content */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+        
+        /* Header */
+        header {
+            height: 70px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .search-bar {
+            position: relative; width: 350px;
+        }
+        .search-bar i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-bar input { padding-left: 40px; background: white; border: 1px solid var(--border); }
+
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .user-profile { 
+            display: flex; align-items: center; gap: 10px; padding: 6px 12px; 
+            border-radius: 50px; cursor: pointer; transition: 0.2s; 
+        }
+        .user-profile:hover { background: var(--primary-light); }
+        .avatar { 
+            width: 36px; height: 36px; background: var(--primary-light); color: var(--primary); 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; 
+            font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+        }
+        .user-info { display: flex; flex-direction: column; overflow: hidden; }
+        .user-name { font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap; }
+        .user-email { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+
+        /* Content Area */
+        .content-area { flex: 1; padding: 2.5rem; overflow-y: auto; }
+        
+        .toolbar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; 
+        }
+        .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .page-subtitle { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; }
+        .toolbar-actions { display: flex; gap: 10px; }
+
+        /* File Grid */
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+        
+        .file-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 1.2rem; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer; display: flex; flex-direction: column; gap: 12px;
+        }
+        .file-card:hover {
+            transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--primary);
+        }
+        .file-icon { font-size: 2.8rem; align-self: center; margin-bottom: 0.5rem; color: var(--primary); }
+        .file-icon.pdf { color: #f87171; }
+        .file-icon.image { color: #34d399; }
+        
+        .file-name { font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+
+        .file-actions {
+            position: absolute; top: 10px; right: 10px; opacity: 0; transform: scale(0.9);
+            transition: 0.2s; background: white; border-radius: 8px; border: 1px solid var(--border);
+            padding: 2px; box-shadow: var(--shadow-sm);
+        }
+        .file-card:hover .file-actions { opacity: 1; transform: scale(1); }
+        
+        .action-btn { 
+            width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
+            color: var(--text-muted); cursor: pointer; transition: 0.2s; display: inline-flex; justify-content: center; align-items: center;
+        }
+        .action-btn:hover { background: var(--primary-light); color: var(--primary); }
+        .action-btn.delete:hover { background: #fef2f2; color: #ef4444; }
+
+        /* Drag & Drop */
+        #drop-zone {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(59, 130, 246, 0.9); backdrop-filter: blur(8px);
+            z-index: 2000; display: flex; justify-content: center; align-items: center;
+            color: white; flex-direction: column; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #drop-zone.active { opacity: 1; pointer-events: all; }
+        #drop-zone i { font-size: 4rem; margin-bottom: 1rem; animation: bounce 1s infinite; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center; z-index: 3000;
+            padding: 1rem;
+        }
+        .modal {
+            background: var(--bg-card); border-radius: 20px; padding: 2rem;
+            width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid white;
+        }
+        .modal h2 { margin-bottom: 1.5rem; color: var(--text-main); font-weight: 700; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2rem; }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 4000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: white; border: 1px solid var(--border); padding: 12px 20px; border-radius: 12px;
+            box-shadow: var(--shadow-md); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px;
+        }
+        .toast i { color: var(--primary); }
+        .toast.error i { color: #ef4444; }
+
+        /* Sidebar Overlay for Mobile */
+        #sidebar-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 999;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+            backdrop-filter: blur(2px);
+        }
+        #sidebar-overlay.active { opacity: 1; pointer-events: all; }
+
+        /* --- RESPONSIVE STYLES --- */
+        @media (max-width: 768px) {
+            aside {
+                position: absolute; top: 0; left: 0; height: 100%;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                transform: translateX(-100%); /* Hidden by default */
+            }
+            aside.open { transform: translateX(0); }
+
+            header {
+                padding: 0 1rem;
+                height: 60px;
+            }
+
+            .search-bar {
+                width: 100%;
+                display: none; /* Hidden on default mobile view, maybe add toggle later or simplify */
+            }
+            /* Show search bar if needed, but for now let's keep it clean or stack */
+            .search-bar.mobile-visible { display: block; position: absolute; top: 60px; left: 0; padding: 0 1rem; width: 100%; z-index: 10; background: white; border-bottom: 1px solid var(--border); }
+            .search-bar.mobile-visible input { width: 100%; }
+
+            .header-actions { gap: 8px; }
+            .user-info { display: none; } /* Hide name/email on mobile */
+            .user-profile { padding: 6px; }
+
+            .content-area { padding: 1.5rem 1rem; }
+            
+            .toolbar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .toolbar-actions { width: 100%; justify-content: space-between; }
+            
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+            .file-icon { font-size: 2.2rem; }
+            
+            .page-title { font-size: 1.25rem; }
+            
+            .modal { padding: 1.5rem; }
+        }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Drag & Drop Overlay -->
+    <div id="drop-zone">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <h2 style="font-size: 2rem; font-weight: 700;">Drop to Upload</h2>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- LOGIN VIEW -->
+    <div id="auth-container">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <i class="fas fa-cloud"></i>
+                <h1>My Cloud</h1>
+                <p>Your personal space.</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <input type="email" id="login-email" required placeholder="Email Address">
+                <input type="password" id="login-pass" required placeholder="Password">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem; margin-top: 1rem;">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP VIEW -->
+    <div id="app-container" class="hidden">
+        <aside id="sidebar">
+            <div class="brand">
+                <i class="fas fa-cloud"></i>
+                <span>My Cloud</span>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-item active" onclick="navigateTo('all'); closeSidebarMobile()" id="nav-all">
+                    <div style="display:flex; align-items:center;"><i class="fas fa-home icon-left"></i> Home</div>
+                </div>
+                <div class="nav-item" onclick="navigateTo('favorites'); closeSidebarMobile()" id="nav-favorites">
+                    <div style="display:flex; align-items:center;"><i class="fas fa-heart icon-left"></i> Favorites</div>
+                </div>
+                <div class="nav-item" onclick="navigateTo('trash'); closeSidebarMobile()" id="nav-trash">
+                    <div style="display:flex; align-items:center;"><i class="fas fa-trash icon-left"></i> Trash</div>
+                </div>
+            </div>
+
+            <div class="section-title">
+                Folders <i class="fas fa-plus" onclick="openModal('create-folder-modal')"></i>
+            </div>
+            <div class="folder-list nav-group" id="folder-list"></div>
+
+            <div style="margin-top: auto; padding: 1rem; background: var(--primary-light); border-radius: 12px; text-align: center;">
+                <p style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">Personal Edition</p>
+            </div>
+        </aside>
+
+        <main>
+            <header>
+                <div class="header-left">
+                    <button class="btn-icon" id="sidebar-toggle" onclick="toggleSidebar()" style="display: none;">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Search your files..." oninput="handleSearch(this.value)">
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <!-- Mobile Search Toggle (Hidden on Desktop) -->
+                    <button class="btn-icon" id="mobile-search-btn" style="display: none;" onclick="toggleMobileSearch()">
+                        <i class="fas fa-search"></i>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="avatar" id="user-avatar">U</div>
+                        <div class="user-info">
+                            <span class="user-name" id="user-name-display">User</span>
+                            <span class="user-email" id="user-email-display">email</span>
+                        </div>
+                        <button class="btn btn-light" style="padding: 0.4rem;" onclick="handleLogout()" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="toolbar">
+                    <div>
+                        <div class="page-title" id="page-title">All Files</div>
+                        <div class="page-subtitle" id="page-subtitle">Manage your documents safely</div>
+                    </div>
+                    <div class="toolbar-actions">
+                        <select id="sort-select" onchange="handleSort(this.value)">
+                            <option value="uploaded_at">Latest</option>
+                            <option value="name">Name</option>
+                            <option value="size">Size</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="document.getElementById('file-upload-input').click()">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                        <input type="file" id="file-upload-input" style="display:none;" onchange="handleFileUpload(this)">
+                    </div>
+                </div>
+
+                <div id="file-list" class="file-grid"></div>
+                <div id="empty-msg" style="text-align:center; margin-top:4rem; display:none; color:var(--text-muted);">
+                    <i class="fas fa-box-open fa-3x" style="margin-bottom:1rem; opacity:0.3;"></i>
+                    <p style="font-weight:600;">No files found here.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="create-folder-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>New Folder</h2>
+            <input type="text" id="new-folder-name" placeholder="Folder Name">
+            <div class="modal-footer">
+                <button class="btn btn-light" onclick="closeModal('create-folder-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createFolder()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rename-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="rename-modal-title">Rename</h2>
+            <input type="text" id="rename-input">
+            <input type="hidden" id="rename-id">
+            <input type="hidden" id="rename-type">
+            <div class="modal-footer">
+                <button class="btn btn-light" onclick="closeModal('rename-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleRenameSubmit()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="move-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Move File</h2>
+            <p style="color:var(--text-muted); margin-bottom:1rem;">Choose a destination:</p>
+            <input type="hidden" id="move-file-id">
+            <select id="move-folder-select">
+                <option value="">Home (All Files)</option>
+            </select>
+            <div class="modal-footer">
+                <button class="btn btn-light" onclick="closeModal('move-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmMove()">Move</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appState = { currentView: 'all', currentFolderId: null, sort: 'uploaded_at' };
+        let currentUser = null;
+        let allFolders = [];
+        let isMobile = window.innerWidth <= 768;
+
+        // --- RESPONSIVE HELPERS ---
+        function checkMobile() {
+            isMobile = window.innerWidth <= 768;
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileSearchBtn = document.getElementById('mobile-search-btn');
+            const searchContainer = document.querySelector('.search-bar');
+            
+            if(isMobile) {
+                sidebarToggle.style.display = 'flex';
+                mobileSearchBtn.style.display = 'flex';
+                searchContainer.style.display = 'none';
+            } else {
+                sidebarToggle.style.display = 'none';
+                mobileSearchBtn.style.display = 'none';
+                searchContainer.style.display = 'block';
+                searchContainer.classList.remove('mobile-visible');
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        function closeSidebarMobile() {
+            if(isMobile) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
+        }
+
+        function toggleMobileSearch() {
+            const searchContainer = document.querySelector('.search-bar');
+            searchContainer.classList.toggle('mobile-visible');
+            if(searchContainer.classList.contains('mobile-visible')) {
+                document.getElementById('search-input').focus();
+            }
+        }
+
+        window.addEventListener('resize', checkMobile);
+        window.addEventListener('load', checkMobile);
+
+        // --- DRAG & DROP ---
+        const dropZone = document.getElementById('drop-zone');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => document.body.addEventListener(eventName, preventDefaults, false));
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        document.body.addEventListener('dragenter', () => dropZone.classList.add('active'));
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+        dropZone.addEventListener('drop', handleDrop);
+        function handleDrop(e) {
+            dropZone.classList.remove('active');
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            ([...files]).forEach(uploadFileDirect);
+        }
+        async function uploadFileDirect(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder_id', appState.currentFolderId || '');
+            showToast(`Uploading ${file.name}...`, 'success');
+            const res = await fetch('/api/files/upload', { method: 'POST', body: formData });
+            if(res.ok) { showToast('Uploaded', 'success'); renderFiles(); }
+        }
+
+        // --- AUTH ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const res = await fetch('/api/auth/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: document.getElementById('login-email').value, 
+                    password: document.getElementById('login-pass').value 
+                })
+            });
+            if (res.ok) { 
+                currentUser = (await res.json()).user; 
+                initApp(); 
+            } else { 
+                showToast('Invalid credentials', 'error'); 
+            }
+        }
+        async function handleLogout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.reload();
+        }
+
+        // --- CORE LOGIC ---
+        async function renderFiles() {
+            let url = `/api/files?view=${appState.currentView}&sort=${appState.sort}`;
+            if(appState.currentFolderId) url += `&folder_id=${appState.currentFolderId}`;
+            const searchVal = document.getElementById('search-input').value;
+            if(searchVal) url += `&search=${searchVal}`;
+
+            try {
+                const res = await fetch(url);
+                const files = await res.json();
+                const container = document.getElementById('file-list');
+                const emptyMsg = document.getElementById('empty-msg');
+                container.innerHTML = '';
+                if(files.length === 0) { emptyMsg.style.display = 'block'; }
+                else {
+                    emptyMsg.style.display = 'none';
+                    files.forEach(file => container.appendChild(createFileCard(file)));
+                }
+            } catch (error) { console.error(error); }
+        }
+
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder_id', appState.currentFolderId || '');
+            const res = await fetch('/api/files/upload', { method: 'POST', body: formData });
+            if(res.ok) { showToast('File uploaded', 'success'); renderFiles(); input.value = ''; }
+        }
+
+        // --- SEARCH & SORT ---
+        let searchTimeout;
+        function handleSearch(val) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => { renderFiles(); }, 500);
+        }
+        function handleSort(val) { appState.sort = val; renderFiles(); }
+
+        // --- UI HELPERS ---
+        function createFileCard(file) {
+            const div = document.createElement('div');
+            div.className = 'file-card';
+            let icon = 'fa-file';
+            if(file.file_type.includes('image')) icon = 'fa-file-image';
+            else if(file.file_type.includes('pdf')) icon = 'fa-file-pdf';
+
+            let actions = '';
+            if(appState.currentView === 'trash') {
+                actions = `
+                    <button class="action-btn" onclick="restoreFile('${file._id}')" title="Restore"><i class="fas fa-undo"></i></button>
+                    <button class="action-btn delete" onclick="deletePermanently('${file._id}')" title="Delete"><i class="fas fa-times"></i></button>
+                `;
+            } else {
+                actions = `
+                    <button class="action-btn" onclick="window.location.href='/download/${file.stored_name}'" title="Download"><i class="fas fa-download"></i></button>
+                    <button class="action-btn" onclick="openRenameModal('file', '${file._id}', '${file.original_name}')" title="Rename"><i class="fas fa-pen"></i></button>
+                    <button class="action-btn" onclick="openMoveModal('${file._id}')" title="Move"><i class="fas fa-arrows-alt"></i></button>
+                    <button class="action-btn" onclick="toggleFavorite('${file._id}')" title="Favorite">
+                        <i class="${file.is_favorite ? 'fas' : 'far'} fa-heart" style="${file.is_favorite ? 'color: var(--primary)' : ''}"></i>
+                    </button>
+                    <button class="action-btn delete" onclick="moveToTrash('${file._id}')" title="Trash"><i class="fas fa-trash"></i></button>
+                `;
+            }
+
+            div.innerHTML = `
+                <div class="file-actions">${actions}</div>
+                <div class="file-icon ${file.file_type.includes('image') ? 'image' : ''} ${file.file_type.includes('pdf') ? 'pdf' : ''}"><i class="fas ${icon}"></i></div>
+                <div class="file-name">${file.original_name}</div>
+                <div class="file-meta">${(file.size/1024).toFixed(1)} KB • ${file.upload_date}</div>
+            `;
+            return div;
+        }
+
+        function showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function initApp() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('user-name-display').textContent = currentUser.name;
+            document.getElementById('user-email-display').textContent = currentUser.email;
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+            navigateTo('all');
+            fetchFolders();
+        }
+
+        function navigateTo(view, folderId = null) {
+            appState.currentView = view;
+            appState.currentFolderId = folderId;
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            if(view === 'all') document.getElementById('nav-all').classList.add('active');
+            if(view === 'favorites') document.getElementById('nav-favorites').classList.add('active');
+            if(view === 'trash') document.getElementById('nav-trash').classList.add('active');
+            
+            let title = 'All Files';
+            let sub = 'Manage your documents';
+            if(view === 'favorites') { title = 'Favorites'; sub = 'Your starred items'; }
+            if(view === 'trash') { title = 'Trash'; sub = 'Deleted items'; }
+            if(folderId) { title = document.querySelector(`.folder-content[onclick*="${folderId}"] span`).textContent; sub = 'Folder contents'; }
+            
+            document.getElementById('page-title').textContent = title;
+            document.getElementById('page-subtitle').textContent = sub;
+            fetchFolders();
+            renderFiles();
+        }
+
+        // --- ACTIONS ---
+        async function fetchFolders() {
+            const res = await fetch('/api/folders');
+            allFolders = await res.json();
+            const list = document.getElementById('folder-list');
+            list.innerHTML = '';
+            allFolders.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'nav-item';
+                if(appState.currentFolderId === f._id) div.classList.add('active');
+                div.innerHTML = `
+                    <div class="folder-content" style="display:flex;align-items:center;" onclick="navigateTo('folder', '${f._id}')">
+                        <i class="fas fa-folder icon-left" style="color:#60a5fa; margin-right:12px;"></i> <span>${f.name}</span>
+                    </div>
+                    <div class="folder-actions" style="display:none; gap:4px;">
+                        <i class="fas fa-pen action-btn" onclick="openRenameModal('folder', '${f._id}', '${f.name}')"></i>
+                        <i class="fas fa-trash action-btn delete" onclick="deleteFolder('${f._id}')"></i>
+                    </div>
+                `;
+                // Keep hover events for desktop
+                div.addEventListener('mouseenter', () => div.querySelector('.folder-actions').style.display = 'flex');
+                div.addEventListener('mouseleave', () => div.querySelector('.folder-actions').style.display = 'none');
+                
+                // For mobile, ensure actions are easier to tap or just keep hover
+                list.appendChild(div);
+            });
+        }
+        async function createFolder() {
+            const name = document.getElementById('new-folder-name').value;
+            if(!name) return;
+            await fetch('/api/folders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name }) });
+            closeModal('create-folder-modal'); document.getElementById('new-folder-name').value = ''; fetchFolders(); showToast('Folder created', 'success');
+        }
+        function openRenameModal(type, id, name) {
+            document.getElementById('rename-type').value = type; document.getElementById('rename-id').value = id;
+            document.getElementById('rename-input').value = name; document.getElementById('rename-modal-title').textContent = 'Rename';
+            openModal('rename-modal');
+        }
+        async function handleRenameSubmit() {
+            const type = document.getElementById('rename-type').value;
+            const id = document.getElementById('rename-id').value;
+            const name = document.getElementById('rename-input').value;
+            if(!name) return;
+            const res = await fetch(`/api/${type === 'file' ? 'files' : 'folders'}/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ new_name: name }) });
+            if(res.ok) { closeModal('rename-modal'); showToast('Renamed', 'success'); if(type==='folder') fetchFolders(); else renderFiles(); }
+        }
+        async function deleteFolder(id) {
+            if(!confirm('Delete folder?')) return;
+            await fetch(`/api/folders/${id}`, { method: 'DELETE' });
+            if(appState.currentFolderId === id) navigateTo('all'); else fetchFolders(); showToast('Deleted', 'success');
+        }
+        function openMoveModal(id) {
+            document.getElementById('move-file-id').value = id;
+            const sel = document.getElementById('move-folder-select');
+            sel.innerHTML = '<option value="">Home</option>';
+            allFolders.forEach(f => { if(f._id !== appState.currentFolderId) sel.innerHTML += `<option value="${f._id}">${f.name}</option>`; });
+            openModal('move-modal');
+        }
+        async function confirmMove() {
+            const id = document.getElementById('move-file-id').value;
+            const fid = document.getElementById('move-folder-select').value;
+            await fetch(`/api/files/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ new_folder_id: fid || null }) });
+            closeModal('move-modal'); renderFiles(); showToast('Moved', 'success');
+        }
+        async function toggleFavorite(id) {
+            const btn = event.currentTarget;
+            const isFav = btn.querySelector('i').classList.contains('fas');
+            await fetch(`/api/files/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_favorite: !isFav }) });
+            renderFiles();
+        }
+        async function moveToTrash(id) {
+            await fetch(`/api/files/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_trashed: true }) });
+            renderFiles(); showToast('Trashed', 'success');
+        }
+        async function restoreFile(id) {
+            await fetch(`/api/files/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_trashed: false }) });
+            renderFiles(); showToast('Restored', 'success');
+        }
+        async function deletePermanently(id) {
+            if(!confirm('Delete forever?')) return;
+            await fetch(`/api/files/${id}`, { method: 'DELETE' });
+            renderFiles();
+        }
+    </script>
+</body>
+</html>
